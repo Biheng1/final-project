@@ -4,12 +4,12 @@
 #include <vector>
 using namespace std;
 
-GoldenCrossStrategy::GoldenCrossStrategy(int shortWindow, int longWindow) {
+GoldenCrossStrategy::GoldenCrossStrategy(int shortWindow, int longWindow) { // constructor to initialize the strategy parameters
     this->shortWindow = shortWindow;
     this->longWindow = longWindow;
 }
 
-SimResult GoldenCrossStrategy::backtest(PriceHistory* history,
+SimResult GoldenCrossStrategy::backtest(PriceHistory* history, // backtest implementation for the Golden Cross strategy, following the rules outlined in the header comments
                                         double monthlyCapital,
                                         int startYear,
                                         int endYear) {
@@ -42,7 +42,7 @@ SimResult GoldenCrossStrategy::backtest(PriceHistory* history,
 
     vector<double> portfolioValues;
 
-    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) {
+    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) { // iterate through price history
         PriceNode& node = *it;
 
         int year = CSVParser::extractYear(node.date);
@@ -55,7 +55,7 @@ SimResult GoldenCrossStrategy::backtest(PriceHistory* history,
         lastClose = node.close;
 
         // Add monthly capital on the first trading day of each month
-        if (year != lastYear || month != lastMonth) {
+        if (year != lastYear || month != lastMonth) { // only invest once per month
             cash += monthlyCapital;
             result.totalInvested += monthlyCapital;
 
@@ -66,9 +66,9 @@ SimResult GoldenCrossStrategy::backtest(PriceHistory* history,
         shortMA.enqueue(node.close);
         longMA.enqueue(node.close);
 
-        if (shortMA.isFull() && longMA.isFull()) {
-            double currentShortAvg = shortMA.getAverage();
-            double currentLongAvg = longMA.getAverage();
+        if (shortMA.isFull() && longMA.isFull()) { // only generate signals if both moving averages are full (enough data)
+            double currentShortAvg = shortMA.getAverage(); // calculate current short-term moving average
+            double currentLongAvg = longMA.getAverage(); // calculate current long-term moving average
 
             if (hasPreviousAverage) {
                 // Golden Cross: short average crosses above long average
@@ -94,29 +94,29 @@ SimResult GoldenCrossStrategy::backtest(PriceHistory* history,
             prevLongAvg = currentLongAvg;
             hasPreviousAverage = true;
         }
-
-        double currentValue = cash + shares * node.close;
+ 
+        double currentValue = cash + shares * node.close; // track portfolio value over time for drawdown calculation
         portfolioValues.push_back(currentValue);
     }
 
     result.finalValue = cash + shares * lastClose;
 
-    if (result.totalInvested > 0.0) {
+    if (result.totalInvested > 0.0) { // calculate total return based on total invested and final value
         result.totalReturn =
             (result.finalValue - result.totalInvested) / result.totalInvested * 100.0;
     }
 
-    result.cagr = calculateCAGR(result.totalInvested,
+    result.cagr = calculateCAGR(result.totalInvested, // calculate CAGR based on total invested and final value
                                 result.finalValue,
                                 endYear - startYear);
 
-    result.maxDrawdown = calculateMaxDrawdown(portfolioValues);
+    result.maxDrawdown = calculateMaxDrawdown(portfolioValues); // calculate max drawdown from the portfolio value time series
 
     return result;
 }
 
-string GoldenCrossStrategy::getName() const {
+string GoldenCrossStrategy::getName() const { 
     stringstream ss;
-    ss << "Golden Cross (" << shortWindow << "/" << longWindow << " MA)";
+    ss << "Golden Cross (" << shortWindow << "/" << longWindow << " MA)"; // include the window sizes in the strategy name for clarity
     return ss.str();
 }

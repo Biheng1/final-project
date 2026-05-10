@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-DynamicSIPStrategy::DynamicSIPStrategy(double dipThreshold,
+DynamicSIPStrategy::DynamicSIPStrategy(double dipThreshold, // constructor to initialize the strategy parameters
                                        double rallyThreshold,
                                        double multiplier) {
     this->dipThreshold = dipThreshold;
@@ -12,7 +12,7 @@ DynamicSIPStrategy::DynamicSIPStrategy(double dipThreshold,
     this->multiplier = multiplier;
 }
 
-SimResult DynamicSIPStrategy::backtest(PriceHistory* history,
+SimResult DynamicSIPStrategy::backtest(PriceHistory* history, // backtest implementation for the Dynamic SIP strategy, following the rules outlined in the header comments
                                        double monthlyCapital,
                                        int startYear,
                                        int endYear) {
@@ -37,13 +37,13 @@ SimResult DynamicSIPStrategy::backtest(PriceHistory* history,
 
     vector<double> portfolioValues;
 
-    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) {
+    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) { // iterate through price history
         PriceNode& node = *it;
 
         int year = CSVParser::extractYear(node.date);
         int month = CSVParser::extractMonth(node.date);
 
-        if (year < startYear || year > endYear) {
+        if (year < startYear || year > endYear) { // skip dates outside the backtest range
             continue;
         }
 
@@ -59,7 +59,7 @@ SimResult DynamicSIPStrategy::backtest(PriceHistory* history,
             int count = 0;
 
             // Scan backward about 12 months (~252 trading days)
-            while (lookback != nullptr && count < 252) {
+            while (lookback != nullptr && count < 252) { // look back up to 252 trading days (approx. 12 months)
                 if (lookback->close > highestPrice) {
                     highestPrice = lookback->close;
                 }
@@ -103,18 +103,18 @@ SimResult DynamicSIPStrategy::backtest(PriceHistory* history,
             lastMonth = month;
         }
 
-        double currentValue = shares * node.close;
+        double currentValue = shares * node.close; // track portfolio value over time for drawdown calculation
         portfolioValues.push_back(currentValue);
     }
 
     result.finalValue = shares * lastClose;
 
-    if (result.totalInvested > 0.0) {
+    if (result.totalInvested > 0.0) { // calculate total return based on total invested and final value
         result.totalReturn =
-            (result.finalValue - result.totalInvested) / result.totalInvested * 100.0;
+            (result.finalValue - result.totalInvested) / result.totalInvested * 100.0; 
     }
 
-    result.cagr = calculateCAGR(result.totalInvested,
+    result.cagr = calculateCAGR(result.totalInvested, // calculate CAGR based on total invested and final value
                                 result.finalValue,
                                 endYear - startYear);
 
@@ -123,7 +123,7 @@ SimResult DynamicSIPStrategy::backtest(PriceHistory* history,
     return result;
 }
 
-string DynamicSIPStrategy::getName() const {
+string DynamicSIPStrategy::getName() const { // return a human-readable name for the strategy including its parameters
     stringstream ss;
 
     ss << "Dynamic SIP (";
@@ -134,14 +134,14 @@ string DynamicSIPStrategy::getName() const {
     return ss.str();
 }
 
-double DynamicSIPStrategy::getDipThreshold() const {
+double DynamicSIPStrategy::getDipThreshold() const { // accessor for dipThreshold, used by the parameter sweep bonus
     return dipThreshold;
 }
 
-double DynamicSIPStrategy::getRallyThreshold() const {
+double DynamicSIPStrategy::getRallyThreshold() const { // accessor for rallyThreshold, used by the parameter sweep bonus
     return rallyThreshold;
 }
 
-double DynamicSIPStrategy::getMultiplier() const {
+double DynamicSIPStrategy::getMultiplier() const { // accessor for multiplier, used by the parameter sweep bonus
     return multiplier;
 }

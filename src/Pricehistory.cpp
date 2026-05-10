@@ -21,7 +21,7 @@ PriceHistory::~PriceHistory() {
 }
 
 void PriceHistory::append(const string& date, double open, double high,
-                          double low, double close, long volume) {
+                          double low, double close, long long volume) {
     PriceNode* node = new PriceNode(date, open, high, low, close, volume);
 
     if (head == nullptr) {

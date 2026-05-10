@@ -4,12 +4,12 @@
 #include <vector>
 using namespace std;
 
-MomentumStrategy::MomentumStrategy(double momentumThreshold, int lookbackDays) {
+MomentumStrategy::MomentumStrategy(double momentumThreshold, int lookbackDays) { // constructor to initialize the strategy parameters
     this->momentumThreshold = momentumThreshold;
     this->lookbackDays = lookbackDays;
 }
 
-SimResult MomentumStrategy::backtest(PriceHistory* history,
+SimResult MomentumStrategy::backtest(PriceHistory* history, // backtest implementation for the Momentum strategy, following the rules outlined in the header comments
                                      double monthlyCapital,
                                      int startYear,
                                      int endYear) {
@@ -22,7 +22,7 @@ SimResult MomentumStrategy::backtest(PriceHistory* history,
     result.maxDrawdown = 0.0;
     result.totalTrades = 0;
 
-    if (history == nullptr || history->getSize() == 0) {
+    if (history == nullptr || history->getSize() == 0) { // handle empty history case
         return result;
     }
 
@@ -35,7 +35,7 @@ SimResult MomentumStrategy::backtest(PriceHistory* history,
 
     vector<double> portfolioValues;
 
-    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) {
+    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) { // iterate through price history
         PriceNode& node = *it;
 
         int year = CSVParser::extractYear(node.date);
@@ -95,7 +95,7 @@ SimResult MomentumStrategy::backtest(PriceHistory* history,
 
     if (result.totalInvested > 0.0) {
         result.totalReturn =
-            (result.finalValue - result.totalInvested) / result.totalInvested * 100.0;
+            (result.finalValue - result.totalInvested) / result.totalInvested * 100.0; // calculate total return based on total invested and final value
     }
 
     result.cagr = calculateCAGR(result.totalInvested,
@@ -107,8 +107,8 @@ SimResult MomentumStrategy::backtest(PriceHistory* history,
     return result;
 }
 
-string MomentumStrategy::getName() const {
+string MomentumStrategy::getName() const { // generate a human-readable name for the strategy based on the momentum threshold
     stringstream ss;
-    ss << "6-Month Momentum (" << momentumThreshold << "%)";
+    ss << "6-Month Momentum (" << momentumThreshold << "%)"; // include the momentum threshold in the name for clarity
     return ss.str();
 }

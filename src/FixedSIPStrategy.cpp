@@ -1,9 +1,10 @@
 #include "FixedSIPStrategy.h"
 #include "CSVParser.h"
 #include <vector>
+#include <string>
 using namespace std;
 
-SimResult FixedSIPStrategy::backtest(PriceHistory* history,
+SimResult FixedSIPStrategy::backtest(PriceHistory* history, // backtest implementation for the Fixed SIP strategy, following the rules outlined in the header comments
                                      double monthlyCapital,
                                      int startYear,
                                      int endYear) {
@@ -22,16 +23,15 @@ SimResult FixedSIPStrategy::backtest(PriceHistory* history,
 
     double shares = 0.0;
     double lastClose = 0.0;
-    int lastMonth = -1;
-    int lastYear = -1;
+
+    string lastMonthKey = "";
 
     vector<double> portfolioValues;
 
-    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) {
+    for (PriceHistory::Iterator it = history->begin(); it != history->end(); ++it) { // iterate through price history
         PriceNode& node = *it;
 
         int year = CSVParser::extractYear(node.date);
-        int month = CSVParser::extractMonth(node.date);
 
         if (year < startYear || year > endYear) {
             continue;
@@ -39,16 +39,17 @@ SimResult FixedSIPStrategy::backtest(PriceHistory* history,
 
         lastClose = node.close;
 
+        // Month key example: "2000-01"
+        string currentMonthKey = node.date.substr(0, 7);
+
         // First trading day of a new month
-        if (year != lastYear || month != lastMonth) {
-            double boughtShares = monthlyCapital / node.close;
-            shares += boughtShares;
+        if (currentMonthKey != lastMonthKey) {
+            shares += monthlyCapital / node.close;
 
             result.totalInvested += monthlyCapital;
             result.totalTrades++;
 
-            lastYear = year;
-            lastMonth = month;
+            lastMonthKey = currentMonthKey;
         }
 
         double currentValue = shares * node.close;
@@ -62,11 +63,11 @@ SimResult FixedSIPStrategy::backtest(PriceHistory* history,
             (result.finalValue - result.totalInvested) / result.totalInvested * 100.0;
     }
 
-    result.cagr = calculateCAGR(result.totalInvested,
+    result.cagr = calculateCAGR(result.totalInvested, // calculate CAGR based on total invested and final value
                                 result.finalValue,
                                 endYear - startYear);
 
-    result.maxDrawdown = calculateMaxDrawdown(portfolioValues);
+    result.maxDrawdown = calculateMaxDrawdown(portfolioValues); // calculate max drawdown from the portfolio value time series
 
     return result;
 }

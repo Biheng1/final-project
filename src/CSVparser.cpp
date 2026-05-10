@@ -1,7 +1,6 @@
 #include "CSVParser.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <vector>
 
 // Opens the CSV file at 'filename', skips the header row, and builds
@@ -119,9 +118,10 @@ PriceHistory* CSVParser::loadHistory(const string& filename) {
             double high = stod(fields[highIndex]);
             double low = stod(fields[lowIndex]);
             double close = stod(fields[closeIndex]);
-            long volume = stol(fields[volumeIndex]);
+            long long volume = stoll(fields[volumeIndex]);
             
             history->append(date, open, high, low, close, volume);
+
         } catch (const exception& e) {
             // Skip rows that cannot be parsed
             continue;
