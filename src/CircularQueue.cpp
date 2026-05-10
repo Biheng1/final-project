@@ -1,93 +1,49 @@
-#include "CircularQueue.h"
-#include <iostream>
-using namespace std;
+#ifndef CIRCULAR_QUEUE_H
+#define CIRCULAR_QUEUE_H
 
-CircularQueue::CircularQueue(int capacity) {
-    this->capacity = capacity;
-    buffer = new double[capacity];
+// Fixed-size circular queue (ring buffer) for computing N-day moving averages.
+//
+// When full, enqueue() overwrites the oldest value automatically — the "window"
+// slides forward. This is the natural structure for a rolling average.
+//
+// Example: CircularQueue(50) tracks the last 50 closing prices.
+//          Once 50 prices have been enqueued, getAverage() returns the 50-day MA.
+//          Each subsequent enqueue drops the oldest price and adds the newest.
+//
+// Course module: Queues (array-based circular buffer variant)
+class CircularQueue {
+private:
+    double* buffer;    // heap-allocated array of size 'capacity'
+    int     capacity;  // maximum number of elements
+    int     head;      // index of the oldest element (next to dequeue)
+    int     tail;      // index where the next enqueue will write
+    int     count;     // number of elements currently stored
 
-    head = 0;
-    tail = 0;
-    count = 0;
-}
+public:
+    // Allocates a buffer of the given capacity
+    CircularQueue(int capacity);
+    ~CircularQueue();
 
-CircularQueue::~CircularQueue() {
-    delete[] buffer;
-    buffer = nullptr;
+    // Add a value. If the queue is full, the oldest value is overwritten
+    // (head advances, count stays at capacity).
+    void enqueue(double value);
 
-    capacity = 0;
-    head = 0;
-    tail = 0;
-    count = 0;
-}
+    // Remove and return the oldest value.
+    // Precondition: !isEmpty()
+    double dequeue();
 
-void CircularQueue::enqueue(double value) {
-    // If the queue is full, overwrite the oldest value.
-    if (isFull()) {
-        buffer[tail] = value;
+    // Return the oldest value without removing it.
+    // Precondition: !isEmpty()
+    double peek() const;
 
-        tail = (tail + 1) % capacity;
-        head = (head + 1) % capacity;
-    }
-    else {
-        buffer[tail] = value;
+    // Compute sum of all stored values divided by count. O(n).
+    // Returns 0.0 if isEmpty().
+    double getAverage() const;
 
-        tail = (tail + 1) % capacity;
-        count++;
-    }
-}
+    bool isFull()  const;
+    bool isEmpty() const;
+    int  getCount()    const;
+    int  getCapacity() const;
+};
 
-double CircularQueue::dequeue() {
-    if (isEmpty()) {
-        cout << "Queue is empty." << endl;
-        return 0.0;
-    }
-
-    double value = buffer[head];
-
-    head = (head + 1) % capacity;
-    count--;
-
-    return value;
-}
-
-double CircularQueue::peek() const {
-    if (isEmpty()) {
-        cout << "Queue is empty." << endl;
-        return 0.0;
-    }
-
-    return buffer[head];
-}
-
-double CircularQueue::getAverage() const {
-    if (isEmpty()) {
-        return 0.0;
-    }
-
-    double sum = 0.0;
-    int index = head;
-
-    for (int i = 0; i < count; i++) {
-        sum += buffer[index];
-        index = (index + 1) % capacity;
-    }
-
-    return sum / count;
-}
-
-bool CircularQueue::isFull() const {
-    return count == capacity;
-}
-
-bool CircularQueue::isEmpty() const {
-    return count == 0;
-}
-
-int CircularQueue::getCount() const {
-    return count;
-}
-
-int CircularQueue::getCapacity() const {
-    return capacity;
-}
+#endif // CIRCULAR_QUEUE_H
