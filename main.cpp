@@ -21,6 +21,8 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <iomanip>
+#include <vector>
 
 // Include all your headers here once implemented
 #include "include/FinancialAsset.h"
@@ -148,97 +150,468 @@ int main() {
 // Menu handler stubs — implement each one below
 // ---------------------------------------------------------------
 
+// ---------------------------------------------------------------
+// Menu handler implementations
+// ---------------------------------------------------------------
+
 void menuLoadData(StockManager<ETF>& etfManager, StockManager<Stock>& stockManager) {
-    // TODO:
-    //  Prompt the user to choose which ticker to load (SPY, AAPL, TSLA, or all).
-    //  For SPY: create a new ETF("SPY", "SPDR S&P 500 ETF", "Index", 0.0003),
-    //           call loadFromCSV("data/SPY.csv"), add to etfManager.
-    //  For AAPL/TSLA: create Stock objects, load CSV, add to stockManager.
-    cout << "(TODO: implement menuLoadData)" << endl;
+    string choice;
+
+    cout << "\nChoose data to load:" << endl;
+    cout << "1. SPX" << endl;
+    cout << "2. AMZN" << endl;
+    cout << "3. NVDA" << endl;
+    cout << "4. All" << endl;
+    cout << "Enter choice: ";
+
+    getline(cin, choice);
+
+    if (choice == "1" || choice == "4") {
+        ETF* spx = new ETF("SPX", "S&P 500 Index", "Index", 0.0000);
+
+        if (spx->loadFromCSV("data/SPX.csv")) {
+            etfManager.addAsset(spx);
+        }
+        else {
+            delete spx;
+        }
+    }
+
+    if (choice == "2" || choice == "4") {
+        Stock* amzn = new Stock("AMZN", "Amazon Inc.", "Consumer");
+
+        if (amzn->loadFromCSV("data/AMZN.csv")) {
+            stockManager.addAsset(amzn);
+        }
+        else {
+            delete amzn;
+        }
+    }
+
+    if (choice == "3" || choice == "4") {
+        Stock* nvda = new Stock("NVDA", "NVIDIA Corporation", "Technology");
+
+        if (nvda->loadFromCSV("data/NVidia_stock_history.csv")) {
+            stockManager.addAsset(nvda);
+        }
+        else {
+            delete nvda;
+        }
+    }
+
+    cout << "Data loading complete." << endl;
 }
 
-void menuDisplayHistory(StockManager<Stock>& stockManager, StockManager<ETF>& etfManager) {
-    // TODO:
-    //  Ask user for a ticker. Find it in stockManager or etfManager.
-    //  Ask how many records to display (or "all").
-    //  Use the PriceHistory forward Iterator to print records.
-    cout << "(TODO: implement menuDisplayHistory)" << endl;
+void menuDisplayHistory(StockManager<Stock>& stockManager,
+                        StockManager<ETF>& etfManager) {
+
+    string ticker;
+    string startDate;
+    string endDate;
+
+    cout << "Enter ticker: ";
+    getline(cin, ticker);
+
+    cout << "Enter start date (YYYY-MM-DD): ";
+    getline(cin, startDate);
+
+    cout << "Enter end date (YYYY-MM-DD): ";
+    getline(cin, endDate);
+
+    ETF* etf = etfManager.findByTicker(ticker);
+
+    if (etf != nullptr) {
+        etf->getHistory()->printRange(startDate, endDate);
+        return;
+    }
+
+    Stock* stock = stockManager.findByTicker(ticker);
+
+    if (stock != nullptr) {
+        stock->getHistory()->printRange(startDate, endDate);
+        return;
+    }
+
+    cout << "Ticker not found." << endl;
 }
 
-void menuSearchByDate(StockManager<Stock>& stockManager, StockManager<ETF>& etfManager) {
-    // TODO:
-    //  Ask user for ticker, start date, and end date.
-    //  Call history->printRange(startDate, endDate).
-    cout << "(TODO: implement menuSearchByDate)" << endl;
+void menuSearchByDate(StockManager<Stock>& stockManager,
+                      StockManager<ETF>& etfManager) {
+
+    menuDisplayHistory(stockManager, etfManager);
 }
 
 void menuBSTRangeSearch(StockBST& bst) {
-    // TODO:
-    //  Ask for a low and high return % value.
-    //  Call bst.rangeSearch(low, high, results) and print each result.
-    cout << "(TODO: implement menuBSTRangeSearch)" << endl;
+    double low;
+    double high;
+
+    cout << "Enter minimum return: ";
+    cin >> low;
+
+    cout << "Enter maximum return: ";
+    cin >> high;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    vector<StockBST::BSTNode*> results;
+
+    bst.rangeSearch(low, high, results);
+
+    if (results.empty()) {
+        cout << "No matching results." << endl;
+        return;
+    }
+
+    for (size_t i = 0; i < results.size(); i++) {
+        cout << results[i]->ticker
+             << " | Return: "
+             << results[i]->key
+             << "%" << endl;
+    }
 }
 
-void menuInsertIntoBST(StockBST& bst, StockManager<Stock>& stockManager) {
-    // TODO:
-    //  Ask for a ticker and a year.
-    //  Find the stock, compute calculateAnnualReturn(year), insert into BST.
-    cout << "(TODO: implement menuInsertIntoBST)" << endl;
+void menuInsertIntoBST(StockBST& bst,
+                       StockManager<Stock>& stockManager) {
+
+    string ticker;
+    int year;
+
+    cout << "Enter ticker: ";
+    getline(cin, ticker);
+
+    cout << "Enter year: ";
+    cin >> year;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    Stock* stock = stockManager.findByTicker(ticker);
+
+    if (stock == nullptr) {
+        cout << "Ticker not found." << endl;
+        return;
+    }
+
+    double annualReturn = stock->calculateAnnualReturn(year);
+
+    bst.insert(ticker, annualReturn, year);
+
+    cout << "Inserted into BST." << endl;
 }
 
 void menuDisplayBST(StockBST& bst) {
-    // TODO:
-    //  Ask user which traversal: inorder / preorder / postorder.
-    //  Call the appropriate BST method.
-    cout << "(TODO: implement menuDisplayBST)" << endl;
+    int choice;
+
+    cout << "\n1. Inorder" << endl;
+    cout << "2. Preorder" << endl;
+    cout << "3. Postorder" << endl;
+    cout << "Enter choice: ";
+
+    cin >> choice;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    if (choice == 1) {
+        bst.inorder();
+    }
+    else if (choice == 2) {
+        bst.preorder();
+    }
+    else if (choice == 3) {
+        bst.postorder();
+    }
+    else {
+        cout << "Invalid choice." << endl;
+    }
 }
 
 void menuAddToPortfolio(Portfolio& portfolio) {
-    // TODO:
-    //  Prompt for ticker, shares, price, date. Call portfolio.buyShares(...).
-    cout << "(TODO: implement menuAddToPortfolio)" << endl;
+    string ticker;
+    string date;
+    int shares;
+    double price;
+
+    cout << "Enter ticker: ";
+    getline(cin, ticker);
+
+    cout << "Enter shares: ";
+    cin >> shares;
+
+    cout << "Enter price: ";
+    cin >> price;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "Enter date: ";
+    getline(cin, date);
+
+    portfolio.buyShares(ticker, shares, price, date);
 }
 
 void menuRemoveFromPortfolio(Portfolio& portfolio) {
-    // TODO:
-    //  Prompt for ticker, shares, current price, date. Call portfolio.sellShares(...).
-    cout << "(TODO: implement menuRemoveFromPortfolio)" << endl;
+    string ticker;
+    string date;
+    int shares;
+    double price;
+
+    cout << "Enter ticker: ";
+    getline(cin, ticker);
+
+    cout << "Enter shares: ";
+    cin >> shares;
+
+    cout << "Enter price: ";
+    cin >> price;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "Enter date: ";
+    getline(cin, date);
+
+    portfolio.sellShares(ticker, shares, price, date);
 }
 
 void menuQueueOrder(Portfolio& portfolio) {
-    // TODO:
-    //  Prompt for order details (ticker, type, side, target price, shares, date).
-    //  Build an Order struct and call portfolio.queueOrder(order).
-    cout << "(TODO: implement menuQueueOrder)" << endl;
+    Order order;
+
+    cout << "Enter ticker: ";
+    getline(cin, order.ticker);
+
+    cout << "Enter order type (MARKET/LIMIT): ";
+    getline(cin, order.type);
+
+    cout << "Enter side (BUY/SELL): ";
+    getline(cin, order.side);
+
+    cout << "Enter shares: ";
+    cin >> order.shares;
+
+    if (order.type == "LIMIT") {
+        cout << "Enter target price: ";
+        cin >> order.targetPrice;
+    }
+    else {
+        order.targetPrice = 0.0;
+    }
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "Enter submitted date: ";
+    getline(cin, order.submittedDate);
+
+    portfolio.queueOrder(order);
 }
 
 void menuExecuteOrder(Portfolio& portfolio) {
-    // TODO:
-    //  Ask for the current market price and today's date.
-    //  Call portfolio.executeNextOrder(currentPrice, date).
-    cout << "(TODO: implement menuExecuteOrder)" << endl;
+    double currentPrice;
+    string date;
+
+    cout << "Enter current market price: ";
+    cin >> currentPrice;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "Enter today's date: ";
+    getline(cin, date);
+
+    portfolio.executeNextOrder(currentPrice, date);
 }
 
 void menuUndoTrade(Portfolio& portfolio) {
-    // TODO: Call portfolio.undoLastTrade() and confirm to the user.
-    cout << "(TODO: implement menuUndoTrade)" << endl;
+    portfolio.undoLastTrade();
 }
 
-void menuRunStrategy(StockManager<ETF>& etfManager, StockManager<Stock>& stockManager) {
-    // TODO:
-    //  Sub-menu: choose strategy (1=FixedSIP, 2=DynamicSIP, 3=GoldenCross, 4=Momentum).
-    //  Ask for: ticker, monthlyCapital, startYear, endYear, strategy parameters.
-    //  Find the asset, get its PriceHistory, create the strategy object,
-    //  call strategy.backtest(...), then strategy.printResult(result).
-    cout << "(TODO: implement menuRunStrategy)" << endl;
+void menuRunStrategy(StockManager<ETF>& etfManager,
+                     StockManager<Stock>& stockManager) {
+
+    string ticker;
+
+    double monthlyCapital;
+    int startYear;
+    int endYear;
+
+    int strategyChoice;
+
+    cout << "Enter ticker (SPX, AMZN, NVDA): ";
+    getline(cin, ticker);
+
+    cout << "Enter monthly capital: ";
+    cin >> monthlyCapital;
+
+    cout << "Enter start year: ";
+    cin >> startYear;
+
+    cout << "Enter end year: ";
+    cin >> endYear;
+
+    cout << "\nChoose strategy:" << endl;
+    cout << "1. Fixed SIP" << endl;
+    cout << "2. Dynamic SIP" << endl;
+    cout << "3. Golden Cross" << endl;
+    cout << "4. Momentum" << endl;
+    cout << "Enter choice: ";
+
+    cin >> strategyChoice;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    PriceHistory* history = nullptr;
+
+    ETF* etf = etfManager.findByTicker(ticker);
+
+    if (etf != nullptr) {
+        history = etf->getHistory();
+    }
+    else {
+        Stock* stock = stockManager.findByTicker(ticker);
+
+        if (stock != nullptr) {
+            history = stock->getHistory();
+        }
+    }
+
+    if (history == nullptr) {
+        cout << "Ticker not loaded." << endl;
+        return;
+    }
+
+    TradingStrategy* strategy = nullptr;
+
+    if (strategyChoice == 1) {
+        strategy = new FixedSIPStrategy();
+    }
+    else if (strategyChoice == 2) {
+        double dipThreshold;
+        double rallyThreshold;
+        double multiplier;
+
+        cout << "Enter dip threshold (%): ";
+        cin >> dipThreshold;
+
+        cout << "Enter rally threshold (%): ";
+        cin >> rallyThreshold;
+
+        cout << "Enter multiplier: ";
+        cin >> multiplier;
+
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        strategy = new DynamicSIPStrategy(
+            dipThreshold,
+            rallyThreshold,
+            multiplier
+        );
+    }
+    else if (strategyChoice == 3) {
+        strategy = new GoldenCrossStrategy();
+    }
+    else if (strategyChoice == 4) {
+        double threshold;
+
+        cout << "Enter momentum threshold (%): ";
+        cin >> threshold;
+
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        strategy = new MomentumStrategy(threshold);
+    }
+    else {
+        cout << "Invalid strategy." << endl;
+        return;
+    }
+
+    SimResult result =
+        strategy->backtest(
+            history,
+            monthlyCapital,
+            startYear,
+            endYear
+        );
+
+    strategy->printResult(result);
+
+    delete strategy;
 }
 
 void menuCompareStrategies(StockManager<ETF>& etfManager) {
-    // TODO:
-    //  Use SPY (find in etfManager). Ask for monthlyCapital, startYear, endYear.
-    //  Run all 4 strategies with default parameters.
-    //  Print a comparison table showing all SimResults side by side.
-    cout << "(TODO: implement menuCompareStrategies)" << endl;
+
+    ETF* spx = etfManager.findByTicker("SPX");
+
+    if (spx == nullptr || spx->getHistory() == nullptr) {
+        cout << "SPX not loaded." << endl;
+        return;
+    }
+
+    double monthlyCapital;
+    int startYear;
+    int endYear;
+
+    cout << "Enter monthly capital: ";
+    cin >> monthlyCapital;
+
+    cout << "Enter start year: ";
+    cin >> startYear;
+
+    cout << "Enter end year: ";
+    cin >> endYear;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    FixedSIPStrategy fixedStrategy;
+    DynamicSIPStrategy dynamicStrategy(10.0, 20.0, 2.0);
+    GoldenCrossStrategy goldenStrategy;
+    MomentumStrategy momentumStrategy(5.0);
+
+    vector<SimResult> results;
+
+    results.push_back(
+        fixedStrategy.backtest(
+            spx->getHistory(),
+            monthlyCapital,
+            startYear,
+            endYear
+        )
+    );
+
+    results.push_back(
+        dynamicStrategy.backtest(
+            spx->getHistory(),
+            monthlyCapital,
+            startYear,
+            endYear
+        )
+    );
+
+    results.push_back(
+        goldenStrategy.backtest(
+            spx->getHistory(),
+            monthlyCapital,
+            startYear,
+            endYear
+        )
+    );
+
+    results.push_back(
+        momentumStrategy.backtest(
+            spx->getHistory(),
+            monthlyCapital,
+            startYear,
+            endYear
+        )
+    );
+
+    cout << std::fixed << setprecision(2);
+
+    cout << "\n===== Strategy Comparison =====" << endl;
+
+    for (size_t i = 0; i < results.size(); i++) {
+        cout << "\nStrategy: " << results[i].strategyName << endl;
+        cout << "Final Value: $" << results[i].finalValue << endl;
+        cout << "Total Invested: $" << results[i].totalInvested << endl;
+        cout << "Return: " << results[i].totalReturn << "%" << endl;
+        cout << "CAGR: " << results[i].cagr << "%" << endl;
+        cout << "Max Drawdown: " << results[i].maxDrawdown << "%" << endl;
+        cout << "Trades: " << results[i].totalTrades << endl;
+    }
 }
 
 void menuPortfolioSummary(Portfolio& portfolio) {
